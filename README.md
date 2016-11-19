@@ -1,2 +1,0 @@
-# PacMan
-HoloLens PacMan Project
