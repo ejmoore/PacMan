@@ -33,7 +33,7 @@ public class RemoveAndIncScore : MonoBehaviour {
         if (Vector3.Distance(transform.position, Camera.main.transform.position) < (Camera.main.GetComponent<BoxCollider>().size.x))
         {
             int score = 0;
-            //coin.Play();
+            Camera.main.GetComponent<AudioSource>().Play();
             if (scoreText != null) {
                 score = int.Parse(scoreText.text);
                 score++;
