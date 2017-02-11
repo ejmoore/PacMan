@@ -12,8 +12,31 @@ public class SpaceCollectionManager : Singleton<SpaceCollectionManager>
     [Tooltip("A collection of Placeable space object prefabs to generate in the world.")]
     public List<GameObject> spaceObjectPrefabs;
 
-    public GameObject camera;
+    public int numOfSpheres = 80;
+    public GameObject myCamera;
     public GameObject ghost;
+    public bool ghostActive = true;
+    public float minDistanceBetween = 2; //Minimum distance between spheres
+    Vector3[] positions;
+
+    public int placedSpheres = 0;
+
+    void Start()
+    {
+        positions = new Vector3[numOfSpheres];
+    }
+
+    public void removeSphere(Vector3 sphere)
+    {
+        for (int i = 0; i < placedSpheres; i++)
+        {
+            if (Vector3.Distance(sphere, positions[i]) == 0)
+            {
+                positions[i] = new Vector3();
+                return;
+            }
+        }
+    }
 
     /// <summary>
     /// Generates a collection of Placeable objects in the world and sets them on planes that match their affinity.
@@ -47,8 +70,7 @@ public class SpaceCollectionManager : Singleton<SpaceCollectionManager>
         {
             CreateSpaceObjects(verticalObjects, verticalSurfaces, PlacementSurfaces.Vertical);
         }
-
-        ghost.SetActive(true); //Make the Ghost follow the player
+        if (ghostActive) ghost.SetActive(true); //Make the Ghost follow the player
     }
 
     /// <summary>
@@ -60,24 +82,27 @@ public class SpaceCollectionManager : Singleton<SpaceCollectionManager>
     private void CreateSpaceObjects(List<GameObject> spaceObjects, List<GameObject> surfaces, PlacementSurfaces surfaceType)
     {
         List<int> UsedPlanes = new List<int>();
+        placedSpheres = 0;
 
         // Sort the planes by distance to user.
         surfaces.Sort((lhs, rhs) =>
-       {
-           Vector3 headPosition = Camera.main.transform.position;
-           Collider rightCollider = rhs.GetComponent<Collider>();
-           Collider leftCollider = lhs.GetComponent<Collider>();
+        {
+            Vector3 headPosition = Camera.main.transform.position;
+            Collider rightCollider = rhs.GetComponent<Collider>();
+            Collider leftCollider = lhs.GetComponent<Collider>();
 
-           // This plane is big enough, now we will evaluate how far the plane is from the user's head.  
-           // Since planes can be quite large, we should find the closest point on the plane's bounds to the 
-           // user's head, rather than just taking the plane's center position.
-           Vector3 rightSpot = rightCollider.ClosestPointOnBounds(headPosition);
-           Vector3 leftSpot = leftCollider.ClosestPointOnBounds(headPosition);
+            // This plane is big enough, now we will evaluate how far the plane is from the user's head.  
+            // Since planes can be quite large, we should find the closest point on the plane's bounds to the 
+            // user's head, rather than just taking the plane's center position.
+            Vector3 rightSpot = rightCollider.ClosestPointOnBounds(headPosition);
+            Vector3 leftSpot = leftCollider.ClosestPointOnBounds(headPosition);
 
-           return Vector3.Distance(leftSpot, headPosition).CompareTo(Vector3.Distance(rightSpot, headPosition));
-       });
+            return Vector3.Distance(leftSpot, headPosition).CompareTo(Vector3.Distance(rightSpot, headPosition));
+        });
 
-        Vector3[] positions = new Vector3[40];
+
+        //debug:
+        float minDistance = 10000;
 
         foreach (GameObject item in spaceObjects)
         {
@@ -121,8 +146,10 @@ public class SpaceCollectionManager : Singleton<SpaceCollectionManager>
                     rotation.z = 0f;
                 }
 
-                
-            } else {
+
+            }
+            else
+            {
                 continue;
             }
 
@@ -131,15 +158,27 @@ public class SpaceCollectionManager : Singleton<SpaceCollectionManager>
             spaceObject.transform.position -= spaceObject.transform.forward.normalized * 1.0f; //Move the GameObject 1 meter away from the plane
             Vector3 temp = new Vector3(0, spaceObject.transform.position.y, 0);
             spaceObject.transform.position -= temp; //Set the y value of the GameObject to be 0
-            for (int i = 0; i < 40; i++) //Loop through all current positions of GameObjects
+            for (int i = 0; i < numOfSpheres; i++) //Loop through all current positions of GameObjects
             {
-                if (Vector3.Distance(spaceObject.transform.position,badPosition) <= .1) {
+
+                //debug:
+                minDistance = 10000000;
+
+                if (Vector3.Distance(spaceObject.transform.position, badPosition) <= .1)
+                {
                     spaceObject.SetActive(false);
                     break;
                 }
-                if (positions[i] != null)
+                if (positions[i] != new Vector3() || Vector3.Distance(positions[i], new Vector3()) > .01)
                 {
-                    if ((spaceObject.transform.position - positions[i]).magnitude < 2.0f) //Set the GameObject to inactive if it's too close to another GameObject
+
+                    //debug:
+                    if (Vector3.Distance(spaceObject.transform.position, positions[i]) < minDistance)
+                    {
+                        minDistance = Vector3.Distance(spaceObject.transform.position, positions[i]);
+                    }
+
+                    if (Vector3.Distance(spaceObject.transform.position, positions[i]) < minDistanceBetween) //Set the GameObject to inactive if it's too close to another GameObject
                     {
                         spaceObject.SetActive(false);
                         break;
@@ -147,16 +186,36 @@ public class SpaceCollectionManager : Singleton<SpaceCollectionManager>
                 }
                 else //Add the GameObject to positions while leaving it active
                 {
-                    positions[i] = spaceObject.transform.position;
-                    break;
-                    if (Vector3.Distance(positions[i],camera.transform.position) < 2) {
+                    if (Vector3.Distance(spaceObject.transform.position, myCamera.transform.position) < 2)
+                    {
+                        //debug:
+                        Debug.Log("Too close to the camera");
                         spaceObject.SetActive(false);
                     }
+                    else
+                    {
+
+                        positions[i] = spaceObject.transform.position;
+                        placedSpheres++;
+                        //debug:
+                        Debug.Log("Distance placed from player: " + Vector3.Distance(positions[i], myCamera.transform.position));
+                    }
+                    break;
                 }
             }
             spaceObject.transform.parent = gameObject.transform;
+            //debug:
+            Debug.Log(minDistance);
+
+            if (placedSpheres == 5)
+            {
+                break;
+            }
         }
-    }    
+        //debug:
+        Debug.Log("placed spheres:" + placedSpheres);
+
+    }
 
     /// <summary>
     /// Attempts to find a the closest plane to the user which is large enough to fit the object.
@@ -169,8 +228,8 @@ public class SpaceCollectionManager : Singleton<SpaceCollectionManager>
     private int FindNearestPlane(List<GameObject> planes, Vector3 minSize, List<int> usedPlanes, bool isVertical)
     {
         int planeIndex = -1;
-       
-        for(int i = 0; i < planes.Count; i++)
+
+        for (int i = 0; i < planes.Count; i++)
         {
             if (usedPlanes.Contains(i))
             {
@@ -183,7 +242,7 @@ public class SpaceCollectionManager : Singleton<SpaceCollectionManager>
                 // This plane is too small to fit our vertical object.
                 continue;
             }
-            else if(!isVertical && (collider.bounds.size.x < minSize.x || collider.bounds.size.y < minSize.y))
+            else if (!isVertical && (collider.bounds.size.x < minSize.x || collider.bounds.size.y < minSize.y))
             {
                 // This plane is too small to fit our horizontal object.
                 continue;
@@ -208,12 +267,39 @@ public class SpaceCollectionManager : Singleton<SpaceCollectionManager>
         float distance = 0.5f;
 
         // Check to see if there is a SpatialMapping mesh occluding the object at its current position.
-        if(Physics.Raycast(position, surfaceNormal, out hitInfo, distance, SpatialMappingManager.Instance.LayerMask))
+        if (Physics.Raycast(position, surfaceNormal, out hitInfo, distance, SpatialMappingManager.Instance.LayerMask))
         {
             // If the object is occluded, reset its position.
             newPosition = hitInfo.point;
         }
 
         return newPosition;
+    }
+
+    public Vector3 findNearestSphere()
+    {
+        if (placedSpheres == 0)
+        {
+            return Vector3.one;
+        }
+
+        Vector3 shortestSphere = myCamera.transform.position;
+
+        for (int j = 0; j < numOfSpheres; j++)
+        {
+            if (positions[j] == new Vector3())
+            {
+                continue;
+            }
+            if (shortestSphere.Equals(myCamera.transform.position))
+            {
+                shortestSphere = positions[j];
+            }
+            if (Vector3.Distance(myCamera.transform.position, positions[j]) < Vector3.Distance(shortestSphere, myCamera.transform.position))
+            {
+                shortestSphere = positions[j];
+            }
+        }
+        return shortestSphere;
     }
 }

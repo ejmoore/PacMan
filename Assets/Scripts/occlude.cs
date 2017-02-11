@@ -3,12 +3,12 @@ using System.Collections;
 
 public class occlude : MonoBehaviour {
 
-    private Camera camera;
+    private Camera myCamera;
     private Color initialColor;
 
 	// Use this for initialization
 	void Start () {
-        camera = Camera.main;
+        myCamera = Camera.main;
         initialColor = GetComponent<Renderer>().material.color;
 
     }
@@ -17,8 +17,8 @@ public class occlude : MonoBehaviour {
     bool castRay(Vector3 translatedPos)
     {
         RaycastHit hit;
-        if (Physics.Raycast(transform.position, camera.transform.position - transform.position, out hit))
-            return hit.transform == camera.transform;
+        if (Physics.Raycast(transform.position, myCamera.transform.position - transform.position, out hit))
+            return hit.transform == myCamera.transform;
 
         return false;
     }
