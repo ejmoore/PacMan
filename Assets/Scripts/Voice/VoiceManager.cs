@@ -14,6 +14,7 @@ public class VoiceManager : MonoBehaviour {
 	void Start () {
         keywords.Add("Audio", () =>
         {
+            Debug.Log("Audio Keyword Recognized, Loading Audio Level");
             SceneManager.LoadScene("AudioLevel");
         });
 
