@@ -22,9 +22,13 @@ public class SpaceCollectionManager : Singleton<SpaceCollectionManager>
 
     public int placedSpheres = 0;
 
+    public GameObject stats;
+    TimeManager timeManager = null;
+
     void Start()
     {
         positions = new Vector3[numOfSpheres];
+        timeManager = stats.GetComponent<TimeManager>();
     }
 
     public void removeSphere(Vector3 sphere)
@@ -33,6 +37,7 @@ public class SpaceCollectionManager : Singleton<SpaceCollectionManager>
         {
             if (Vector3.Distance(sphere, positions[i]) == 0)
             {
+                timeManager.GetPoint(positions[i]);
                 positions[i] = new Vector3();
                 return;
             }
@@ -190,7 +195,7 @@ public class SpaceCollectionManager : Singleton<SpaceCollectionManager>
                     if (Vector3.Distance(spaceObject.transform.position, myCamera.transform.position) < 2)
                     {
                         //debug:
-                        Debug.Log("Too close to the camera");
+                        //Debug.Log("Too close to the camera");
                         spaceObject.SetActive(false);
                     }
                     else
@@ -199,22 +204,23 @@ public class SpaceCollectionManager : Singleton<SpaceCollectionManager>
                         positions[i] = spaceObject.transform.position;
                         placedSpheres++;
                         //debug:
-                        Debug.Log("Distance placed from player: " + Vector3.Distance(positions[i], myCamera.transform.position));
+                        //Debug.Log("Distance placed from player: " + Vector3.Distance(positions[i], myCamera.transform.position));
                     }
                     break;
                 }
             }
             spaceObject.transform.parent = gameObject.transform;
             //debug:
-            Debug.Log(minDistance);
+            //Debug.Log(minDistance);
 
             if (placedSpheres == numOfSpheresToBePlaced)
             {
+                GameObject.Find("Stats").GetComponent<TimeManager>().StartTimer();
                 break;
             }
         }
         //debug:
-        Debug.Log("placed spheres:" + placedSpheres);
+        //Debug.Log("placed spheres:" + placedSpheres);
 
     }
 

@@ -8,6 +8,7 @@ public class RemoveAndIncScore : MonoBehaviour
     Text scoreText;
     Text endOfGameText;
     GameObject SpaceCollection;
+    GameObject Stats;
 
     // Use this for initialization
     void Start()
@@ -15,8 +16,9 @@ public class RemoveAndIncScore : MonoBehaviour
         GameObject tempScore = GameObject.Find("ScoreNum");
         //GameObject tempScore = GameObject.FindGameObjectWithTag("Score");
         scoreText = tempScore.GetComponent<Text>();
-        //endOfGameText = GameObject.Find("EndOfGameText").GetComponent<Text>();
-        //endOfGameText.text = "";
+        endOfGameText = GameObject.Find("EndOfGameText").GetComponent<Text>();
+        endOfGameText.text = "";
+        Stats = GameObject.Find("Stats");
 
         SpaceCollection = GameObject.Find("SphereCollection");
     }
@@ -43,6 +45,10 @@ public class RemoveAndIncScore : MonoBehaviour
         {
             int score = 0;
             Camera.main.GetComponent<AudioSource>().Play();
+            
+            Debug.Log("hit sphere " + score);
+            this.gameObject.SetActive(false);
+            SpaceCollection.GetComponent<SpaceCollectionManager>().removeSphere(this.gameObject.transform.position);
             if (scoreText != null)
             {
                 score = int.Parse(scoreText.text.ToCharArray()[0] + "");
@@ -53,11 +59,9 @@ public class RemoveAndIncScore : MonoBehaviour
                 SpaceCollection.GetComponent<SpaceCollectionManager>().placedSpheres != 0)
                 {
                     //endOfGameText.text = "You Win";
+                    endOfGameText.text = Stats.GetComponent<TimeManager>().getResults();
                 }
             }
-            Debug.Log("hit sphere " + score);
-            this.gameObject.SetActive(false);
-            SpaceCollection.GetComponent<SpaceCollectionManager>().removeSphere(this.gameObject.transform.position);
         }
     }
 }
